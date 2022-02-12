@@ -1,0 +1,9 @@
+services:
+
+  server:
+    build: ./server
+    ports:
+      - "8000:80"
+  mongo:
+    image: mongo
+    restart: always
