@@ -26,7 +26,17 @@ def deid_obj(object: dict):
     return object_copy
 
 
+# TODO remove on production?
+@app.after_request
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = '*'
+    # Other headers can be added here if required
+    return response
+
 # TODO remove later on, this is for debugging
+
+
 @app.route("/game", methods=["GET"])
 def get_games():
     games = db.games.find({})
