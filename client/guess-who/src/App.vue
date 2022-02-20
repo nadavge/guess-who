@@ -1,5 +1,5 @@
 <template>
-  <Game />
+  <Game id="620a570626057c1a44731b8b" />
 </template>
 
 <script>

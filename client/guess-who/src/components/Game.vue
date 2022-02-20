@@ -12,41 +12,30 @@ import PlayerList from "./PlayerList.vue";
 export default {
   name: "Game",
   components: { PlayerList },
-  props: {},
+  props: {
+    id: String,
+  },
+  inject: ["api_url"],
   data() {
     return {
       players: [],
     };
   },
   mounted() {
-    var that = this;
-    function fetchData() {
-      // I prefer to use fetch
-      // you can use use axios as an alternative
-      fetch("http://127.0.0.1:5000/game/620a570626057c1a44731b8b")
-        .then((res) => {
-          console.log(res);
-          // a non-200 response code
-          if (!res.ok) {
-            // create error instance with HTTP status text
-            throw Error(`${res.status} ${res.statusText}`);
-          }
-
-          return res.json();
-        })
-        .then((json) => {
+    this.fetchGameState();
+  },
+  methods: {
+    fetchGameState() {
+      fetch(this.api_url + "/game/" + this.id)
+        .then((res) => res.json())
+        .then((data) => {
           // set the response data
-          that.players = json.players;
+          this.players = data.players;
         })
         .catch((err) => {
-          console.log("Nabaz2", err);
-        })
-        .then(() => {
-          console.log("Nabaz");
+          console.log("Failed retreiving game state...", err);
         });
-    }
-
-    fetchData();
+    },
   },
 };
 </script>
