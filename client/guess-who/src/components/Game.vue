@@ -1,6 +1,6 @@
 <template>
   <div class="hello">
-    YO
+    Playing in room {{ this.gameId }}
     <PlayerList :players="players" answer="yes" />
     <PlayerList :players="players" answer="no" />
   </div>
@@ -13,7 +13,7 @@ export default {
   name: "Game",
   components: { PlayerList },
   props: {
-    id: String,
+    gameId: String,
   },
   inject: ["api_url"],
   data() {
@@ -26,7 +26,7 @@ export default {
   },
   methods: {
     fetchGameState() {
-      fetch(this.api_url + "/game/" + this.id)
+      fetch(this.api_url + "/game/" + this.gameId)
         .then((res) => res.json())
         .then((data) => {
           // set the response data

@@ -31,6 +31,7 @@ def deid_obj(object: dict):
 def after_request(response):
     header = response.headers
     header['Access-Control-Allow-Origin'] = '*'
+    header['Access-Control-Allow-Headers'] = 'Content-Type'
     # Other headers can be added here if required
     return response
 
@@ -300,8 +301,9 @@ def join_game(game_id):
     if game is None:
         return {"error": "Game doesn't accept players"}, 409
 
-    return {
-        "id": player_id,
+    return jsonify({
+        "game_id": str(game_id),
+        "player_id": player_id,
         "name": request.json["name"],
         "cookie": cookie
-    }
+    })
