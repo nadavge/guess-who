@@ -1,16 +1,13 @@
 <template>
-  <div class="hello">
-    Playing in room {{ this.gameId }}
-    <PlayerList :players="players" answer="yes" />
-    <PlayerList :players="players" answer="no" />
-  </div>
+  <PlayerList :players="players" answer="yes" />
+  <PlayerList :players="players" answer="no" />
 </template>
 
 <script>
 import PlayerList from "./PlayerList.vue";
 
 export default {
-  name: "Game",
+  name: "GameScreen",
   components: { PlayerList },
   props: {
     gameId: String,

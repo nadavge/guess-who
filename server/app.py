@@ -235,7 +235,7 @@ def answer_question(game_id, question_id):
             {"$set": {"state": "ask", f"questions.{question_id}.correct_answer": correct_answer}}
         )
 
-    return "success"
+    return jsonify({"answer": request.json["answer"]})
 
 
 @ app.route("/game/<game_id>/question/<int:question_id>", methods=["GET"])

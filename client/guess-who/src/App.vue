@@ -1,10 +1,14 @@
 <template>
   <GameChoice v-if="gameId == null" @joinGame="joinGame($event)" />
-  <Game :gameId="gameId" v-if="gameId != null" />
+  <button @click="screen = !screen">Howdy</button>
+  <button @click="leaveGame()">Leave game</button>
+  <GameView :gameId="gameId" v-if="gameId != null && !screen" />
+  <GameScreen :gameId="gameId" v-if="gameId != null && screen" />
 </template>
 
 <script>
-import Game from "./components/Game.vue";
+import GameScreen from "./components/GameScreen.vue";
+import GameView from "./components/GameView.vue";
 import GameChoice from "./components/GameChoice.vue";
 import { useCookies } from "vue3-cookies";
 
@@ -12,7 +16,8 @@ export default {
   name: "App",
   components: {
     GameChoice,
-    Game,
+    GameScreen,
+    GameView,
   },
   setup() {
     const { cookies } = useCookies();
@@ -21,7 +26,16 @@ export default {
   data() {
     return {
       gameId: null,
+      screen: false,
     };
+  },
+  mounted() {
+    if (this.cookies.get("gameId") != null) {
+      this.gameId = this.cookies.get("gameId");
+      this.playerId = this.cookies.get("playerId");
+      this.playerName = this.cookies.get("playerName");
+      this.playerCookie = this.cookies.get("playerCookie");
+    }
   },
   methods: {
     joinGame(e) {
@@ -29,12 +43,16 @@ export default {
       this.gameId = e.gameId;
       this.playerId = e.playerId;
       this.playerName = e.playerName;
-      this.cookie = e.cookie;
+      this.playerCookie = e.cookie;
 
       this.cookies.set("playerCookie", e.cookie, "1Y");
       this.cookies.set("playerId", e.playerId, "1Y");
       this.cookies.set("playerName", e.playerName, "1Y");
       this.cookies.set("gameId", e.gameId, "1Y");
+    },
+    leaveGame() {
+      this.cookies.keys().forEach((cookie) => this.cookies.remove(cookie));
+      this.gameId = null;
     },
   },
 };
