@@ -16,15 +16,21 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
+ul {
+  list-style: none;
+  font-size: 16px;
+  font-weight: 600;
+}
+
 ul.unknown li {
-  color: gray;
+  color: rgb(80, 80, 80);
 }
 
 ul.no li {
-  color: red;
+  color: rgb(124, 17, 17);
 }
 
 ul.yes li {
-  color: green;
+  color: rgb(26 126 26);
 }
 </style>
