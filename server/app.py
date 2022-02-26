@@ -6,6 +6,7 @@ import pymongo
 import json
 import bson
 from bson.objectid import ObjectId
+import string
 
 app = Flask(__name__)
 # TODO maybe add server info
@@ -14,6 +15,8 @@ db = mongo_client.game_database
 
 PLAYER_ID_SIZE = 6  # bytes
 PLAYER_COOKIE_SIZE = 20  # bytes
+GAME_ID_LEN = 4
+GAME_ID_LETTERS = string.ascii_letters
 
 
 def random_hex_str(count):
@@ -22,7 +25,7 @@ def random_hex_str(count):
 
 def deid_obj(object: dict):
     object_copy = deepcopy(object)
-    object_copy["id"] = str(object_copy.pop("_id"))
+    object_copy["id"] = str(object_copy.pop("game_id"))
     return object_copy
 
 
@@ -38,30 +41,9 @@ def after_request(response):
 # TODO remove later on, this is for debugging
 
 
-@app.route("/game", methods=["GET"])
-def get_games():
-    games = db.games.find({})
-    return {
-        "games": [{"id": str(g["_id"])} for g in games]
-    }
-
-
-@app.route("/game", methods=["POST"])
-def create_game():
-    game = {
-        "state": "lobby",
-        "questions": [],
-        "players": [],
-    }
-
-    game_id = db.games.insert_one(game).inserted_id
-    return {
-        "id": str(game_id)
-    }
-
-
 def jsonified_game_info(game: dict):
     return jsonify({
+        "game_id": game["game_id"],
         "state": game["state"],
         "current_question": len(game["questions"])-1 if game["questions"] else None,
         "players": [
@@ -75,14 +57,30 @@ def jsonified_game_info(game: dict):
     })
 
 
+@app.route("/game", methods=["GET"])
+def get_games():
+    games = db.games.find({})
+    return {
+        "games": [jsonified_game_info(g) for g in games]
+    }
+
+
+@app.route("/game", methods=["POST"])
+def create_game():
+    game = {
+        "game_id": "".join(random.choice(GAME_ID_LETTERS) for _ in range(GAME_ID_LEN)),
+        "state": "lobby",
+        "questions": [],
+        "players": [],
+    }
+
+    db.games.insert_one(game).inserted_id
+    return jsonified_game_info(game)
+
+
 @app.route("/game/<game_id>", methods=["GET"])
 def get_game_info(game_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -91,12 +89,7 @@ def get_game_info(game_id):
 
 @app.route("/game/<game_id>/start", methods=["POST"])
 def start_game(game_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -105,7 +98,7 @@ def start_game(game_id):
 
     chosen_player = random.choice(game["players"])
     game = db.games.find_one_and_update(
-        {"_id": game["_id"]},
+        {"game_id": game["game_id"]},
         {"$set": {"state": "ask", "chosen_player_id": chosen_player["id"]}}
     )
 
@@ -114,12 +107,7 @@ def start_game(game_id):
 
 @app.route("/game/<game_id>/question", methods=["GET"])
 def get_questions(game_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -128,18 +116,13 @@ def get_questions(game_id):
 
 @app.route("/game/<game_id>/question", methods=["POST"])
 def ask_question(game_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
     if request.json is None:
         return {"error": "Invalid request format, expected json"}, 400
 
     if "title" not in request.json:
         return {"error": "Missing question title in request"}, 400
 
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -162,7 +145,7 @@ def ask_question(game_id):
         last_question = game["questions"][-1]
         correct_answer = last_question["answers"][game["chosen_player_id"]]
         db.games.update_one(
-            {"_id": game_id},
+            {"game_id": game_id},
             {
                 "$set": {
                     f"players.{i}.game_status": new_status(p)
@@ -172,7 +155,7 @@ def ask_question(game_id):
         )
 
     db.games.update_one(
-        {"_id": game_id},
+        {"game_id": game_id},
         {
             "$push": {
                 "questions": new_question
@@ -188,11 +171,6 @@ def ask_question(game_id):
 
 @app.route("/game/<game_id>/question/<int:question_id>", methods=["POST"])
 def answer_question(game_id, question_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
     if request.json is None:
         return {"error": "Invalid request format, expected json"}, 400
 
@@ -203,7 +181,7 @@ def answer_question(game_id, question_id):
     if request.json["answer"] not in ["yes", "no"]:
         return {"error": "Invalid answer"}, 400
 
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -221,13 +199,13 @@ def answer_question(game_id, question_id):
 
     # NOTE This can potentially be re-answered after the fact... So be it for now :)
     db.games.update_one(
-        {"_id": game_id},
+        {"game_id": game_id},
         {
             "$set": {f"questions.{question_id}.answers.{player['id']}": request.json["answer"]}
         }
     )
 
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     assert game is not None
 
     current_question = game["questions"][question_id]
@@ -235,7 +213,7 @@ def answer_question(game_id, question_id):
     if game["state"] == "answer" and all(answer is not None for answer in current_question["answers"].values()):
         correct_answer = current_question["answers"][game["chosen_player_id"]]
         db.games.update_one(
-            {"_id": game_id, "state": "answer"},
+            {"game_id": game_id, "state": "answer"},
             {"$set": {"state": "ask", f"questions.{question_id}.correct_answer": correct_answer}}
         )
 
@@ -244,12 +222,7 @@ def answer_question(game_id, question_id):
 
 @ app.route("/game/<game_id>/question/<int:question_id>", methods=["GET"])
 def get_question_info(game_id, question_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -268,11 +241,6 @@ def get_question_info(game_id, question_id):
 
 @ app.route("/game/<game_id>/join", methods=["POST"])
 def join_game(game_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
     if request.json is None:
         return {"error": "Invalid request format, expected json"}, 400
 
@@ -281,7 +249,7 @@ def join_game(game_id):
 
     player_id = random_hex_str(PLAYER_ID_SIZE)
     cookie = random_hex_str(PLAYER_COOKIE_SIZE)
-    game = db.games.find_one({"_id": game_id})
+    game = db.games.find_one({"game_id": game_id})
     if game is None:
         return {"error": "Game not found"}, 404
 
@@ -289,7 +257,7 @@ def join_game(game_id):
         return {"error": "Game doesn't accept players"}, 409
 
     game = db.games.find_one_and_update(
-        {"_id": game_id, "state": "lobby"},
+        {"game_id": game_id, "state": "lobby"},
         {
             "$push": {
                 "players": {

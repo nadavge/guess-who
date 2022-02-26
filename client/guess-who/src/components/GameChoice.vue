@@ -1,7 +1,11 @@
 <template>
   <div>
     <label for="gameId">Game ID: </label><br />
-    <input id="gameId" v-model="gameId" /><br />
+    <input
+      id="gameId"
+      v-model="gameId"
+      style="font-family: 'Courier New', Garamond, Times, Consolas"
+    /><br />
     <label for="name">Name: </label><br />
     <input id="name" v-model="name" /><br />
     <button @click="joinGame">Join game!</button><br />
@@ -88,7 +92,7 @@ export default {
         })
         .then((data) => {
           // set the response data
-          alert("New game created! '" + data.id + "'");
+          alert("New game created! '" + data.game_id + "'");
         })
         .catch((err) => {
           "Something was wrong with the parameters perhaps.. " +
