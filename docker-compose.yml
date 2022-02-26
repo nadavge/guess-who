@@ -2,7 +2,7 @@ services:
   frontend:
     build: ./client/guess-who
     ports:
-      - "8080:8080"
+      - "80:8080"
 
   backend:
     build: ./server
@@ -16,8 +16,6 @@ services:
   mongodb:
     image: mongo
     restart: always
-    ports:
-      - 27017:27017
     volumes:
       - type: volume
         source: mongodb-data-volume

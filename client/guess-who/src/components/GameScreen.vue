@@ -1,6 +1,7 @@
 <template>
   <div v-text="error" style="color: red" v-if="error" />
   <div style="margin-bottom: 10px">
+    <h1 v-if="gameState == 'lobby'">Join with this code: {{ gameId }}</h1>
     <button class="reset" @click="resetGame">Reset game</button>
   </div>
   <div class="question" v-if="currentQuestion != null">
