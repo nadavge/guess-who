@@ -1,27 +1,28 @@
 <template>
-  Hello player!<br />
-  <div v-if="currentQuestionId != null">
-    {{ questionTitle }}
-  </div>
-  <div>
-    <button
-      :class="myAnswer == 'yes' ? ['selected'] : []"
-      :disabled="gameState != 'answer'"
-      @click="answer('yes')"
-    >
-      Yes
-    </button>
-    <button
-      :class="myAnswer == 'no' ? ['selected'] : []"
-      :disabled="gameState != 'answer'"
-      @click="answer('no')"
-    >
-      No
-    </button>
-  </div>
-  <div v-if="waiting > 0" class="loadingio-spinner-rolling-0efhjb6yyalu">
-    <div class="ldio-1mmitfc0jou">
-      <div></div>
+  <div class="gameView">
+    <div style="margin-bottom: 20px">
+      <button
+        :class="myAnswer == 'yes' ? ['selected', 'yes'] : ['yes']"
+        :disabled="gameState != 'answer' || waiting > 0"
+        @click="answer('yes')"
+      >
+        Yes
+      </button>
+      <button
+        :class="myAnswer == 'no' ? ['selected', 'no'] : ['no']"
+        :disabled="gameState != 'answer' || waiting > 0"
+        @click="answer('no')"
+      >
+        No
+      </button>
+    </div>
+    <div v-if="currentQuestionId != null">
+      {{ questionTitle }}
+    </div>
+    <div v-if="waiting > 0" class="loadingio-spinner-rolling-0efhjb6yyalu">
+      <div class="ldio-1mmitfc0jou">
+        <div></div>
+      </div>
     </div>
   </div>
 </template>
@@ -64,7 +65,6 @@ export default {
   },
   methods: {
     fetchGameState() {
-      this.waiting++;
       fetch(this.api_url + "/game/" + this.gameId)
         .then((res) => {
           return res.json();
@@ -72,15 +72,12 @@ export default {
         .then((data) => {
           this.gameState = data.state;
           this.currentQuestionId = data.current_question;
-          this.waiting--;
         })
         .catch((err) => {
-          this.waiting--;
           console.log("Failed retrieving game state...", err);
         });
     },
     fetchQuestionInfo() {
-      this.waiting++;
       fetch(
         this.api_url +
           "/game/" +
@@ -93,15 +90,14 @@ export default {
           let playerId = this.cookies.get("playerId");
           this.myAnswer = data.answers[playerId];
           this.questionTitle = data.title;
-          this.waiting--;
         })
         .catch((err) => {
-          this.waiting--;
           console.log("Failed retrieving question info...", err);
         });
     },
     answer(value) {
       this.waiting++;
+      this.waitingAnswerSubmit++;
       fetch(
         this.api_url +
           "/game/" +
@@ -142,8 +138,28 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-button.selected {
-  background-color: #89b3eb;
+.gameView {
+  font-size: 2em;
+}
+
+button {
+  font-size: 1em;
+  width: 90%;
+  height: 100px;
+  border-radius: 0.4em;
+  color: black;
+}
+
+button:disabled {
+  color: gray;
+}
+
+/* #89b3eb; */
+button.yes.selected {
+  background-color: #a1d392;
+}
+button.no.selected {
+  background-color: #ec9a9a;
 }
 
 /* Spinning wheel */

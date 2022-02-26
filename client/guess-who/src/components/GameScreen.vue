@@ -2,15 +2,46 @@
   <div class="question" v-if="currentQuestion != null">
     {{ currentQuestion.title }}
   </div>
+  <div v-if="gameState == 'ask'">
+    <input v-model="nextQuestionTitle" style="min-width: 50%" /><button
+      style="width: 50px"
+      @click="askQuestion"
+    >
+      Ask!
+    </button>
+  </div>
+  <div v-if="gameState == 'lobby'">
+    <button style="width: 50px" @click="startGame">Start!</button>
+  </div>
+
+  <div class="playerRow headers">
+    <div class="playerCol">
+      <h2>Yes</h2>
+    </div>
+    <div class="playerCol">
+      <h2>Waiting</h2>
+    </div>
+    <div class="playerCol">
+      <h2>No</h2>
+    </div>
+  </div>
   <div class="playerRow">
     <div class="playerCol">
-      <PlayerList :players="playersInYes" answer="yes" />
+      <PlayerList
+        :players="playersInYes"
+        answer="yes"
+        :class="[currentQuestion?.correct_answer == 'yes' ? 'correct' : '']"
+      />
     </div>
     <div class="playerCol">
       <PlayerList :players="playersInUnknown" answer="unknown" />
     </div>
     <div class="playerCol">
-      <PlayerList :players="playersInNo" answer="no" />
+      <PlayerList
+        :players="playersInNo"
+        answer="no"
+        :class="[currentQuestion?.correct_answer == 'no' ? 'correct' : '']"
+      />
     </div>
   </div>
   <hr />
@@ -54,6 +85,7 @@ export default {
       currentQuestion: null,
       fetchGameTimer: null,
       fetchAnswersTimer: null,
+      nextQuestionTitle: "",
     };
   },
   computed: {
@@ -93,18 +125,42 @@ export default {
     }
   },
   methods: {
-    fetchGameState() {
-      fetch(this.api_url + "/game/" + this.gameId)
-        .then((res) => res.json())
-        .then((data) => {
-          // set the response data
-          this.players = data.players;
-          this.gameState = data.state;
-          this.currentQuestionId = data.current_question;
+    postRequest(rel_url, body, handler) {
+      return fetch(this.api_url + rel_url, {
+        method: "post",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            const error = await res.json();
+            throw Error(error.error);
+          }
+          return res.json();
         })
+        .then(handler)
         .catch((err) => {
-          console.log("Failed retreiving game state...", err);
+          this.error =
+            "Failed post request to " + rel_url + " : " + err.message;
         });
+    },
+    getRequest(rel_url, handler) {
+      return fetch(this.api_url + rel_url)
+        .then((res) => res.json())
+        .then(handler)
+        .catch((err) => {
+          console.log("Failed getting from " + rel_url + " : " + err.message);
+        });
+    },
+    gameInfoHandler(gameInfo) {
+      this.players = gameInfo.players;
+      this.gameState = gameInfo.state;
+      this.currentQuestionId = gameInfo.current_question;
+    },
+    fetchGameState() {
+      this.getRequest("/game/" + this.gameId, this.gameInfoHandler);
     },
     fetchQuestionInfo() {
       console.log("Fetching question info");
@@ -122,6 +178,26 @@ export default {
         .catch((err) => {
           console.log("Failed retrieving question info...", err);
         });
+    },
+    askQuestion() {
+      this.postRequest(
+        "/game/" + this.gameId + "/question",
+        {
+          title: this.nextQuestionTitle,
+        },
+        (data) => {
+          this.currentQuestionId++;
+          this.currentQuestion = data;
+          this.nextQuestionTitle = "";
+        }
+      );
+    },
+    startGame() {
+      this.postRequest(
+        "/game/" + this.gameId + "/start",
+        {},
+        this.gameInfoHandler
+      );
     },
   },
   watch: {
@@ -155,8 +231,17 @@ div.playerRow {
   margin: auto;
   text-align: center;
 }
+
+div.playerRow.headers {
+  color: rgb(110, 110, 110);
+}
+
 div.playerCol {
   display: inline-block;
   width: 20%;
+}
+
+.correct {
+  background-color: rgb(228, 246, 255);
 }
 </style>

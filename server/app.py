@@ -60,17 +60,7 @@ def create_game():
     }
 
 
-@app.route("/game/<game_id>", methods=["GET"])
-def get_game_info(game_id):
-    try:
-        game_id = ObjectId(game_id)
-    except bson.errors.InvalidId:
-        return {"error": "Unknown or invalid Game ID"}, 400
-
-    game = db.games.find_one({"_id": game_id})
-    if game is None:
-        return {"error": "Game not found"}, 404
-
+def jsonified_game_info(game: dict):
     return jsonify({
         "state": game["state"],
         "current_question": len(game["questions"])-1 if game["questions"] else None,
@@ -83,6 +73,20 @@ def get_game_info(game_id):
             for p in game["players"]
         ]
     })
+
+
+@app.route("/game/<game_id>", methods=["GET"])
+def get_game_info(game_id):
+    try:
+        game_id = ObjectId(game_id)
+    except bson.errors.InvalidId:
+        return {"error": "Unknown or invalid Game ID"}, 400
+
+    game = db.games.find_one({"_id": game_id})
+    if game is None:
+        return {"error": "Game not found"}, 404
+
+    return jsonified_game_info(game)
 
 
 @app.route("/game/<game_id>/start", methods=["POST"])
@@ -100,12 +104,12 @@ def start_game(game_id):
         return {"error": f"Game in state '{game['state']}', should be 'lobby'"}, 409
 
     chosen_player = random.choice(game["players"])
-    db.games.update_one(
+    game = db.games.find_one_and_update(
         {"_id": game["_id"]},
         {"$set": {"state": "ask", "chosen_player_id": chosen_player["id"]}}
     )
 
-    return ""
+    return jsonified_game_info(game)
 
 
 @app.route("/game/<game_id>/question", methods=["GET"])

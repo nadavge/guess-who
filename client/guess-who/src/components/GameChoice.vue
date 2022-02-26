@@ -25,12 +25,29 @@ export default {
   },
   methods: {
     joinGame() {
+      if (this.name == "secretadmin") {
+        fetch(this.api_url + "/game/" + this.gameId)
+          .then((res) => {
+            return res.json();
+          })
+          .then(() => {
+            this.$emit("joinGame", {
+              gameId: this.gameId,
+              playerId: "admin",
+            });
+          })
+          .catch((err) => {
+            console.log("Failed retrieving game state...", err);
+          });
+        return;
+      }
       fetch(this.api_url + "/game/" + this.gameId + "/join", {
         method: "post",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name: this.name }),
+        cache: "no-cache",
       })
         .then(async (res) => {
           if (!res.ok) {
@@ -49,9 +66,10 @@ export default {
         })
         .catch((err) => {
           this.error =
-            "Something was wrong with the parameters perhaps.. " + err.message;
+            "Something was wrong with the parameters perhaps.. " +
+            this.api_url +
+            err.message;
         });
-      alert("Joining game '" + this.gameId + "'");
     },
 
     newGame() {
@@ -73,8 +91,9 @@ export default {
           alert("New game created! '" + data.id + "'");
         })
         .catch((err) => {
-          this.error =
-            "Something was wrong with the parameters perhaps.. " + err.message;
+          "Something was wrong with the parameters perhaps.. " +
+            this.api_url +
+            err.message;
         });
     },
   },

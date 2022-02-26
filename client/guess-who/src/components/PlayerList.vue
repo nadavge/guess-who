@@ -18,8 +18,10 @@ export default {
 <style scoped>
 ul {
   list-style: none;
+  padding: 10px;
   font-size: 16px;
   font-weight: 600;
+  border-radius: 0.3em;
 }
 
 ul.unknown li {

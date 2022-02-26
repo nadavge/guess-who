@@ -1,9 +1,11 @@
 <template>
-  <GameChoice v-if="gameId == null" @joinGame="joinGame($event)" />
-  <button @click="screen = !screen">Howdy</button>
-  <button @click="leaveGame()">Leave game</button>
-  <GameView :gameId="gameId" v-if="gameId != null && !screen" />
-  <GameScreen :gameId="gameId" v-if="gameId != null && screen" />
+  <div class="app">
+    <button @click="admin = !admin">Howdy</button>
+    <button @click="leaveGame()">Leave game</button>
+    <GameChoice v-if="gameId == null" @joinGame="joinGame($event)" />
+    <GameView :gameId="gameId" v-if="gameId != null && !admin" />
+    <GameScreen :gameId="gameId" v-if="gameId != null && admin" />
+  </div>
 </template>
 
 <script>
@@ -26,7 +28,7 @@ export default {
   data() {
     return {
       gameId: null,
-      screen: false,
+      admin: false,
     };
   },
   mounted() {
@@ -39,8 +41,13 @@ export default {
   },
   methods: {
     joinGame(e) {
-      alert("Event triggered" + e.gameId);
       this.gameId = e.gameId;
+      if (e.playerId == "admin") {
+        this.admin = true;
+        console.log(`admin: ${this.admin}, gameId: ${this.gameId}`);
+        return;
+      }
+
       this.playerId = e.playerId;
       this.playerName = e.playerName;
       this.playerCookie = e.cookie;
@@ -64,5 +71,10 @@ export default {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #1a1b1b;
+}
+
+.app {
+  margin: auto;
+  text-align: center;
 }
 </style>
