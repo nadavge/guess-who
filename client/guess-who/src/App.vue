@@ -29,6 +29,9 @@ export default {
   data() {
     return {
       gameId: null,
+      playerId: null,
+      playerName: null,
+      playerCookie: null,
       admin: false,
     };
   },

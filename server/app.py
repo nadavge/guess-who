@@ -3,6 +3,7 @@ import os
 import random
 from flask import Flask, jsonify, request
 import pymongo
+from pymongo.collection import ReturnDocument
 import json
 import bson
 from bson.objectid import ObjectId
@@ -71,6 +72,7 @@ def create_game():
         "game_id": "".join(random.choice(GAME_ID_LETTERS) for _ in range(GAME_ID_LEN)),
         "state": "lobby",
         "questions": [],
+        "old_questions": [],
         "players": [],
     }
 
@@ -99,7 +101,32 @@ def start_game(game_id):
     chosen_player = random.choice(game["players"])
     game = db.games.find_one_and_update(
         {"game_id": game["game_id"]},
-        {"$set": {"state": "ask", "chosen_player_id": chosen_player["id"]}}
+        {"$set": {"state": "ask", "chosen_player_id": chosen_player["id"]}},
+        return_document=ReturnDocument.AFTER
+    )
+
+    return jsonified_game_info(game)
+
+
+@app.route("/game/<game_id>/reset", methods=["POST"])
+def reset_game(game_id):
+    game = db.games.find_one({"game_id": game_id})
+    if game is None:
+        return {"error": "Game not found"}, 404
+
+    if game["state"] != "ask":
+        return {"error": f"Game in state '{game['state']}', should be 'ask'"}, 409
+
+    chosen_player = random.choice(game["players"])
+    game = db.games.find_one_and_update(
+        {"game_id": game["game_id"]},
+        {"$set": {
+            "chosen_player_id": chosen_player["id"],
+            "players.$[].game_status": "in",
+            "old_questions": game["old_questions"] + game["questions"],
+            "questions": []
+        }},
+        return_document=ReturnDocument.AFTER
     )
 
     return jsonified_game_info(game)
@@ -267,7 +294,8 @@ def join_game(game_id):
                     "game_status": "in",
                 }
             }
-        }
+        },
+        return_document=ReturnDocument.AFTER
     )
 
     if game is None:

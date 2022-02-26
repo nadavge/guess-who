@@ -1,14 +1,14 @@
 <template>
+  <div v-text="error" style="color: red" v-if="error" />
+  <div style="margin-bottom: 10px">
+    <button class="reset" @click="resetGame">Reset game</button>
+  </div>
   <div class="question" v-if="currentQuestion != null">
     {{ currentQuestion.title }}
   </div>
   <div v-if="gameState == 'ask'">
-    <input v-model="nextQuestionTitle" style="min-width: 50%" /><button
-      style="width: 50px"
-      @click="askQuestion"
-    >
-      Ask!
-    </button>
+    <input v-model="nextQuestionTitle" style="min-width: 50%" />
+    <button style="width: 50px" @click="askQuestion">Ask!</button>
   </div>
   <div v-if="gameState == 'lobby'">
     <button style="width: 50px" @click="startGame">Start!</button>
@@ -86,6 +86,7 @@ export default {
       fetchGameTimer: null,
       fetchAnswersTimer: null,
       nextQuestionTitle: "",
+      error: "",
     };
   },
   computed: {
@@ -142,8 +143,7 @@ export default {
         })
         .then(handler)
         .catch((err) => {
-          this.error =
-            "Failed post request to " + rel_url + " : " + err.message;
+          this.error = err.message;
         });
     },
     getRequest(rel_url, handler) {
@@ -151,7 +151,7 @@ export default {
         .then((res) => res.json())
         .then(handler)
         .catch((err) => {
-          console.log("Failed getting from " + rel_url + " : " + err.message);
+          this.error = err.message;
         });
     },
     gameInfoHandler(gameInfo) {
@@ -163,6 +163,10 @@ export default {
       this.getRequest("/game/" + this.gameId, this.gameInfoHandler);
     },
     fetchQuestionInfo() {
+      if (this.currentQuestionId == null) {
+        this.currentQuestion = null;
+        return;
+      }
       console.log("Fetching question info");
       fetch(
         this.api_url +
@@ -198,6 +202,15 @@ export default {
         {},
         this.gameInfoHandler
       );
+    },
+    resetGame() {
+      if (confirm("Sure you want to reset the game?")) {
+        this.postRequest(
+          "/game/" + this.gameId + "/reset",
+          {},
+          this.gameInfoHandler
+        );
+      }
     },
   },
   watch: {
@@ -239,6 +252,14 @@ div.playerRow.headers {
 div.playerCol {
   display: inline-block;
   width: 20%;
+}
+
+button.reset {
+  border: 1px solid #640000;
+  padding: 5px 10px 5px 10px;
+  border-radius: 5px;
+  color: white;
+  background-color: #a30000;
 }
 
 .correct {
