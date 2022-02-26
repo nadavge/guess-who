@@ -7,9 +7,9 @@
       style="font-family: 'Courier New', Garamond, Times, Consolas"
     /><br />
     <label for="name">Name: </label><br />
-    <input id="name" v-model="name" /><br />
-    <button @click="joinGame">Join game!</button><br />
-    <button @click="newGame">Create new game!</button><br />
+    <input id="name" v-model="name" /><br /><br />
+    <button @click="joinGame">Join game!</button><br /><br />
+    <button @click="newGame">Create new game!</button><br /><br />
     <div v-text="error" style="color: red" v-if="error" />
   </div>
 </template>
@@ -69,10 +69,7 @@ export default {
           });
         })
         .catch((err) => {
-          this.error =
-            "Something was wrong with the parameters perhaps.. " +
-            this.api_url +
-            err.message;
+          this.error = err.message;
         });
     },
 
@@ -95,9 +92,7 @@ export default {
           alert("New game created! '" + data.game_id + "'");
         })
         .catch((err) => {
-          "Something was wrong with the parameters perhaps.. " +
-            this.api_url +
-            err.message;
+          this.error = err.message;
         });
     },
   },

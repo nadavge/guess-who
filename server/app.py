@@ -16,7 +16,7 @@ db = mongo_client.game_database
 PLAYER_ID_SIZE = 6  # bytes
 PLAYER_COOKIE_SIZE = 20  # bytes
 GAME_ID_LEN = 4
-GAME_ID_LETTERS = string.ascii_letters
+GAME_ID_LETTERS = string.ascii_uppercase
 
 
 def random_hex_str(count):

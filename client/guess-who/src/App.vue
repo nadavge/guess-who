@@ -1,7 +1,8 @@
 <template>
   <div class="app">
-    <button @click="admin = !admin">Howdy</button>
-    <button @click="leaveGame()">Leave game</button>
+    <div v-if="gameId && playerId">
+      <button @click="leaveGame()">Leave game</button>
+    </div>
     <GameChoice v-if="gameId == null" @joinGame="joinGame($event)" />
     <GameView :gameId="gameId" v-if="gameId != null && !admin" />
     <GameScreen :gameId="gameId" v-if="gameId != null && admin" />
@@ -58,8 +59,14 @@ export default {
       this.cookies.set("gameId", e.gameId, "1Y");
     },
     leaveGame() {
-      this.cookies.keys().forEach((cookie) => this.cookies.remove(cookie));
-      this.gameId = null;
+      if (
+        confirm(
+          "Are you sure you want to leave?\nYou can't come back and the game will be broken!"
+        )
+      ) {
+        this.cookies.keys().forEach((cookie) => this.cookies.remove(cookie));
+        this.gameId = null;
+      }
     },
   },
 };
