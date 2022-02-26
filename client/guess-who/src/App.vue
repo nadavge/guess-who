@@ -1,6 +1,6 @@
 <template>
   <div class="app">
-    <div v-if="gameId && playerId">
+    <div style="margin-bottom: 10px" v-if="gameId && playerId">
       <button @click="leaveGame()">Leave game</button>
     </div>
     <GameChoice v-if="gameId == null" @joinGame="joinGame($event)" />
