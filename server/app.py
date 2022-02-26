@@ -11,7 +11,8 @@ import string
 
 app = Flask(__name__)
 # TODO maybe add server info
-mongo_client = pymongo.MongoClient()
+mongo_hostname = os.environ.get('MONGODB_HOSTNAME', 'localhost')
+mongo_client = pymongo.MongoClient(mongo_hostname)
 db = mongo_client.game_database
 
 PLAYER_ID_SIZE = 6  # bytes
