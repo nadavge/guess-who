@@ -1,0 +1,25 @@
+services:
+  frontend:
+    build: ./client/guess-who
+    ports:
+      - "80:8080"
+
+  backend:
+    build: ./server
+    ports:
+      - "5000:80"
+    environment:
+      MONGODB_HOSTNAME: mongodb
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo
+    restart: always
+    volumes:
+      - type: volume
+        source: mongodb-data-volume
+        target: /data/db
+
+volumes:
+  mongodb-data-volume:
